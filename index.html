@@ -246,6 +246,15 @@ body{
 .pcard:nth-child(5){animation-delay:.24s}
 @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
 </style>
+
+<!-- Google Analytics 4 — Hills Sweets NMC -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-DYHKFWR1Z0"></script>
+<script>
+window.dataLayer=window.dataLayer||[];
+function gtag(){dataLayer.push(arguments);}
+gtag('js',new Date());
+gtag('config','G-DYHKFWR1Z0');
+</script>
 </head>
 <body>
 
@@ -478,6 +487,67 @@ function setupGalleries(){
     });
   });
 }
+
+/* ── GA4 Custom Event Tracking — Hills Sweets NMC ── */
+(function(){
+  function ga(event,params){
+    if(typeof gtag==='function') gtag('event',event,params);
+  }
+
+  /* 1. SCROLL DEPTH — fires at 25 / 50 / 75 / 100% */
+  var scrollDone={25:false,50:false,75:false,100:false};
+  window.addEventListener('scroll',function(){
+    var pct=Math.round((window.scrollY/(document.body.scrollHeight-window.innerHeight))*100);
+    [25,50,75,100].forEach(function(m){
+      if(!scrollDone[m]&&pct>=m){
+        scrollDone[m]=true;
+        ga('scroll_depth',{scroll_percent:m});
+      }
+    });
+  },{passive:true});
+
+  /* 2. TIME ON PAGE — fires at 30s / 60s / 120s / 300s */
+  [30,60,120,300].forEach(function(s){
+    setTimeout(function(){ ga('time_on_page',{seconds:s}); },s*1000);
+  });
+
+  /* 3. PRODUCT CARD VIEWS — fires when each card scrolls into view */
+  var seen={};
+  function watchCards(){
+    if(!('IntersectionObserver' in window)) return;
+    var obs=new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(!e.isIntersecting) return;
+        var nameEl=e.target.querySelector('.pname');
+        if(!nameEl) return;
+        var name=nameEl.textContent.trim();
+        if(!name||seen[name]) return;
+        seen[name]=true;
+        ga('view_item',{item_name:name});
+        obs.unobserve(e.target);
+      });
+    },{threshold:0.5});
+    document.querySelectorAll('.pcard').forEach(function(c){ obs.observe(c); });
+  }
+
+  /* Watch for products being injected into the grid (loaded async) */
+  window.addEventListener('DOMContentLoaded',function(){
+    var grid=document.getElementById('pg-grid');
+    if(!grid) return;
+    new MutationObserver(function(){ watchCards(); })
+      .observe(grid,{childList:true});
+  });
+
+  /* 4. DEVICE TYPE — log on load */
+  window.addEventListener('load',function(){
+    ga('device_info',{
+      device_type: window.innerWidth<=768?'mobile':'desktop',
+      screen_width: window.innerWidth
+    });
+  });
+
+})();
+
 </script>
 </body>
 </html>

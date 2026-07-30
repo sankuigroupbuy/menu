@@ -239,12 +239,22 @@ body{
 @keyframes spin{to{transform:rotate(360deg)}}
 
 /* gentle entry animation */
-.pcard{animation:fadeUp .45s ease both}
-.pcard:nth-child(2){animation-delay:.06s}
-.pcard:nth-child(3){animation-delay:.12s}
-.pcard:nth-child(4){animation-delay:.18s}
-.pcard:nth-child(5){animation-delay:.24s}
-@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+/* product cards — scroll-triggered */
+.pcard{opacity:0;transform:translateY(18px);transition:opacity 0.45s ease,transform 0.45s ease}
+.pcard.visible{opacity:1;transform:translateY(0)}
+
+/* hero zoom */
+@keyframes heroZoom{from{transform:scale(1.06)}to{transform:scale(1)}}
+.hero-img{animation:heroZoom 3.5s ease-out both;transform-origin:center center}
+
+/* date pill */
+@keyframes updFadeIn{from{opacity:0;transform:translate(-50%,-40%)}to{opacity:1;transform:translate(-50%,-50%)}}
+.hero .upd.upd-anim{animation:updFadeIn 0.55s ease-out 1.2s both}
+
+/* sub-hero title + intro */
+@keyframes slideUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+.sub-hero h1.anim{animation:slideUp 0.6s ease-out 0.8s both}
+.sub-hero .intro.anim{animation:slideUp 0.6s ease-out 1.0s both}
 </style>
 
 <!-- Google Analytics 4 — Hills Sweets NMC -->
@@ -393,18 +403,21 @@ function render(data){
     var tEl=document.getElementById('pg-title');
     tEl.textContent=data.title;
     tEl.style.display='block';
+    tEl.classList.add('anim');
     document.title='山區團購優惠組 · '+data.title;
   }
   if(data.intro){
     var iEl=document.getElementById('pg-intro');
     iEl.textContent=data.intro;
     iEl.style.display='block';
+    iEl.classList.add('anim');
   }
   if(data.publishedAt){
     var d=new Date(data.publishedAt);
     var uEl=document.getElementById('pg-upd');
     uEl.textContent='更新於 '+d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear();
     uEl.style.display='block';
+    uEl.classList.add('upd-anim');
   }
 
   var html='';
@@ -440,6 +453,24 @@ function render(data){
   });
   document.getElementById('pg-grid').innerHTML=html;
   setupGalleries();
+  setupCardAnimations();
+}
+
+/* ── scroll-triggered card animations ── */
+function setupCardAnimations(){
+  if(!('IntersectionObserver' in window)){
+    document.querySelectorAll('.pcard').forEach(function(c){c.classList.add('visible');});
+    return;
+  }
+  var obs=new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting){
+        e.target.classList.add('visible');
+        obs.unobserve(e.target);
+      }
+    });
+  },{threshold:0.12,rootMargin:'0px 0px -40px 0px'});
+  document.querySelectorAll('.pcard').forEach(function(c){obs.observe(c);});
 }
 
 /* ── swipeable galleries ── */
